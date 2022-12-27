@@ -1,5 +1,14 @@
 import * as core from '@actions/core';
-import { Action, Docker, ImageTag, Input, Output, ResultsCheck } from './model';
+import {
+  Action,
+  Docker,
+  ImageTag,
+  Input,
+  MacRunner,
+  Output,
+  PlatformSetup,
+  ResultsCheck,
+} from './model';
 
 export async function run() {
   try {
@@ -24,25 +33,29 @@ export async function run() {
     } = Input.getFromUser();
     const baseImage = new ImageTag({ editorVersion, customImage });
     const runnerContext = Action.runnerContext();
+    const runnerParameters = {
+      actionFolder,
+      editorVersion,
+      workspace,
+      projectPath,
+      customParameters,
+      testMode,
+      coverageOptions,
+      artifactsPath,
+      useHostNetwork,
+      sshAgent,
+      gitPrivateToken,
+      githubToken,
+      chownFilesTo,
+      unityLicensingServer,
+      ...runnerContext,
+    };
 
     try {
-      await Docker.run(baseImage, {
-        actionFolder,
-        editorVersion,
-        workspace,
-        projectPath,
-        customParameters,
-        testMode,
-        coverageOptions,
-        artifactsPath,
-        useHostNetwork,
-        sshAgent,
-        gitPrivateToken,
-        githubToken,
-        chownFilesTo,
-        unityLicensingServer,
-        ...runnerContext,
-      });
+      await PlatformSetup.setup(runnerParameters, actionFolder);
+      await (process.platform === 'darwin'
+        ? MacRunner.run(runnerParameters)
+        : Docker.run(baseImage, runnerParameters));
     } finally {
       await Output.setArtifactsPath(artifactsPath);
       await Output.setCoveragePath('CodeCoverage');

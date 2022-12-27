@@ -24,8 +24,8 @@ jobs:
   #      - run: yarn build --quiet && git diff --quiet action || { echo "ERROR - index.js is different from repository version. Forgot to run `yarn build`?" ; exit 62; }
 
   testAllModesLikeInTheReadme:
-    name: Test in ${{ matrix.testMode }} on version ${{ matrix.unityVersion }}
-    runs-on: ubuntu-latest
+    name: Test in ${{ matrix.testMode }} on version ${{ matrix.unityVersion }} on system ${{ matrix.system }}
+    runs-on: ${{ matrix.system }}
     strategy:
       fail-fast: false
       matrix:
@@ -36,6 +36,9 @@ jobs:
         testMode:
           - playmode
           - editmode
+        system:
+          - ubuntu-latest
+          - macos-latest
     steps:
       ###########################
       #         Checkout        #
@@ -64,7 +67,7 @@ jobs:
           customParameters: -profile SomeProfile -someBoolean -someValue exampleValue
       - uses: actions/upload-artifact@v3
         with:
-          name: Test results for ${{ matrix.testMode }}
+          name: Test results for ${{ matrix.testMode }} on ${{ matrix.system }}
           path: ${{ steps.tests.outputs.artifactsPath }}
           retention-days: 14
 
