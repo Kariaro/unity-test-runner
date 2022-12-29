@@ -1,5 +1,4 @@
 import { existsSync, mkdirSync, readFileSync, rmSync } from 'fs';
-import LicensingServerSetup from './licensing-server-setup';
 import type { RunnerContext } from './action';
 import { exec } from '@actions/exec';
 import path from 'path';
@@ -31,10 +30,6 @@ const Docker = {
 
   async run(image, parameters, silent = false) {
     let runCommand = '';
-
-    if (parameters.unityLicensingServer !== '') {
-      LicensingServerSetup.Setup(parameters.unityLicensingServer, parameters.actionFolder);
-    }
 
     switch (process.platform) {
       case 'linux':
@@ -116,8 +111,8 @@ const Docker = {
                 --volume "${githubHome}:/root:z" \
                 --volume "${githubWorkflow}:/github/workflow:z" \
                 --volume "${workspace}:/github/workspace:z" \
-                --volume "${actionFolder}/steps:/steps:z" \
-                --volume "${actionFolder}/entrypoint.sh:/entrypoint.sh:z" \
+                --volume "${actionFolder}/platforms/ubuntu/steps:/steps:z" \
+                --volume "${actionFolder}/platforms/ubuntu/entrypoint.sh:/entrypoint.sh:z" \
                 --volume "${actionFolder}/unity-config:/usr/share/unity3d/config/:z" \
                 ${sshAgent ? `--volume ${sshAgent}:/ssh-agent` : ''} \
                 ${
@@ -126,7 +121,7 @@ const Docker = {
                 ${useHostNetwork ? '--net=host' : ''} \
                 ${githubToken ? '--env USE_EXIT_CODE=false' : '--env USE_EXIT_CODE=true'} \
                 ${image} \
-                /bin/bash -c /entrypoint.sh`;
+                /bin/bash -c "chmod +x /entrypoint.sh; bash /entrypoint.sh"`;
   },
 
   getWindowsCommand(image, parameters): string {
@@ -195,8 +190,8 @@ const Docker = {
                 --volume "${githubHome}":"c:/root" \
                 --volume "${githubWorkflow}":"c:/github/workflow" \
                 --volume "${workspace}":"c:/github/workspace" \
-                --volume "${actionFolder}/steps":"c:/steps" \
-                --volume "${actionFolder}":"c:/dist" \
+                --volume "${actionFolder}/platforms/windows/steps":"c:/steps" \
+                --volume "${actionFolder}/platforms/windows":"c:/dist" \
                 ${sshAgent ? `--volume ${sshAgent}:c:/ssh-agent` : ''} \
                 ${
                   sshAgent
